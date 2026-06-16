@@ -5,7 +5,7 @@ const api = {
     getSetupState: () => ipcRenderer.invoke('oracle:getSetupState'),
     findClient: () => ipcRenderer.invoke('oracle:findClient'),
     initThick: (libDir?: string) => ipcRenderer.invoke('oracle:initThick', libDir),
-    installClient: () => ipcRenderer.invoke('oracle:installClient'),
+    openDownloadPage: () => ipcRenderer.invoke('oracle:openDownloadPage'),
     setSetupDone: (mode: 'thin' | 'thick') => ipcRenderer.invoke('oracle:setSetupDone', mode),
     resetSetup: () => ipcRenderer.invoke('oracle:resetSetup'),
   },

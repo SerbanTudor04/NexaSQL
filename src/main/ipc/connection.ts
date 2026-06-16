@@ -4,6 +4,14 @@ import Store from 'electron-store'
 import * as crypto from 'crypto'
 import { tryInitThickMode } from './oracle-setup'
 
+async function oraclePrivilege(privilege?: 'default' | 'sysdba' | 'sysoper'): Promise<number | undefined> {
+  if (!privilege || privilege === 'default') return undefined
+  const { default: oracledb } = await import('oracledb')
+  if (privilege === 'sysdba') return oracledb.SYSDBA
+  if (privilege === 'sysoper') return oracledb.SYSOPER
+  return undefined
+}
+
 interface ConnectionConfig {
   id: string
   name: string
@@ -26,6 +34,7 @@ interface ConnectionConfig {
     sid?: string
     tnsAlias?: string
     walletPath?: string
+    privilege?: 'default' | 'sysdba' | 'sysoper'
   }
   savePassword: boolean
 }
@@ -122,10 +131,12 @@ export function registerConnectionHandlers(ipcMain: IpcMain): void {
           if (config.oracle?.mode === 'tns' && config.oracle.tnsAlias) {
             connectString = config.oracle.tnsAlias
           }
+          const privilege = await oraclePrivilege(config.oracle?.privilege)
           const conn = await oracledb.getConnection({
             user: config.username,
             password: config.password,
-            connectString
+            connectString,
+            ...(privilege !== undefined && { privilege })
           })
           await conn.execute('SELECT 1 FROM DUAL')
           await conn.close()
@@ -171,7 +182,34 @@ export function registerConnectionHandlers(ipcMain: IpcMain): void {
         return { success: true, connectionId: config.id }
       }
 
-      return { success: false, message: 'Oracle connection pooling coming soon' }
+      if (config.type === 'oracle') {
+        try {
+          await tryInitThickMode()
+          const { default: oracledb } = await import('oracledb')
+          const password = config.password?.includes(':') ? decrypt(config.password) : config.password
+          let connectString = config.host + ':' + config.port + '/' + config.oracle?.serviceName
+          if (config.oracle?.mode === 'tns' && config.oracle.tnsAlias) {
+            connectString = config.oracle.tnsAlias
+          }
+          const privilege = await oraclePrivilege(config.oracle?.privilege)
+          const pool = await oracledb.createPool({
+            user: config.username,
+            password,
+            connectString,
+            ...(privilege !== undefined && { privilege }),
+            poolMin: 1,
+            poolMax: 10,
+            poolIncrement: 1
+          })
+          pools.set(config.id, pool as unknown as import('pg').Pool)
+          return { success: true, connectionId: config.id }
+        } catch (oraErr: unknown) {
+          const msg = oraErr instanceof Error ? oraErr.message : String(oraErr)
+          return { success: false, message: msg }
+        }
+      }
+
+      return { success: false, message: 'Unknown database type' }
     } catch (err: unknown) {
       const error = err as Error
       return { success: false, message: error.message }

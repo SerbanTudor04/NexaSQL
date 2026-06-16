@@ -31,7 +31,7 @@ const defaultForm = (): ConnectionConfig => ({
   password: '',
   ssl: false,
   savePassword: true,
-  oracle: { mode: 'basic', serviceName: '' }
+  oracle: { mode: 'basic', serviceName: '', privilege: 'default' }
 })
 
 const form = ref<ConnectionConfig>(defaultForm())
@@ -60,6 +60,12 @@ const oracleModeOptions = [
   { value: 'basic', label: 'Basic (Host/Port/Service)' },
   { value: 'tns', label: 'TNS Alias' },
   { value: 'wallet', label: 'OCI Wallet' }
+]
+
+const oraclePrivilegeOptions = [
+  { value: 'default', label: 'Default' },
+  { value: 'sysdba', label: 'SYSDBA' },
+  { value: 'sysoper', label: 'SYSOPER' }
 ]
 
 const isValid = computed(() =>
@@ -166,6 +172,11 @@ function handleSave() {
           <label class="text-[10px] text-muted-foreground uppercase tracking-wide mb-1 block">Password</label>
           <Input v-model="form.password" type="password" placeholder="••••••" autocomplete="off" />
         </div>
+      </div>
+
+      <div v-if="form.type === 'oracle'">
+        <label class="text-[10px] text-muted-foreground uppercase tracking-wide mb-1 block">Privilege</label>
+        <Select v-model="form.oracle!.privilege" :options="oraclePrivilegeOptions" />
       </div>
 
       <label class="flex items-center gap-2 cursor-pointer select-none">

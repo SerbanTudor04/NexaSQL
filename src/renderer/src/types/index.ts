@@ -15,6 +15,7 @@ export interface ConnectionConfig {
     sid?: string
     tnsAlias?: string
     walletPath?: string
+    privilege?: 'default' | 'sysdba' | 'sysoper'
   }
   sshTunnel?: {
     host: string

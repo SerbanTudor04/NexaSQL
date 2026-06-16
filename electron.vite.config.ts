@@ -4,10 +4,10 @@ import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin({ exclude: ['node-oracledb'] })],
+    plugins: [externalizeDepsPlugin()],
     build: {
       rollupOptions: {
-        external: ['node-oracledb']
+        external: ['oracledb']
       }
     }
   },

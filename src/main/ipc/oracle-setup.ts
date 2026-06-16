@@ -1,12 +1,8 @@
-import { IpcMain } from 'electron'
-import { execFile } from 'child_process'
-import { promisify } from 'util'
+import { IpcMain, shell } from 'electron'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
 import Store from 'electron-store'
-
-const execFileAsync = promisify(execFile)
 
 interface SetupStore {
   oracleSetupDone: boolean
@@ -122,23 +118,14 @@ export function registerOracleSetupHandlers(ipcMain: IpcMain): void {
     return result
   })
 
-  ipcMain.handle('oracle:installClient', async () => {
-    if (process.platform !== 'darwin') {
-      return { success: false, error: 'Auto-install via Homebrew only supported on macOS.' }
-    }
-    try {
-      await execFileAsync('brew', ['--version'])
-    } catch {
-      return { success: false, error: 'Homebrew not found. Install from https://brew.sh then retry.' }
-    }
-    try {
-      await execFileAsync('brew', ['tap', 'oracle/homebrew-instantclient'])
-      await execFileAsync('brew', ['install', 'instantclient-basic'], { timeout: 180000 })
-      const found = await findOracleClient()
-      return { success: true, path: found }
-    } catch (err: unknown) {
-      return { success: false, error: err instanceof Error ? err.message : String(err) }
-    }
+  ipcMain.handle('oracle:openDownloadPage', async () => {
+    const url = process.platform === 'win32'
+      ? 'https://www.oracle.com/database/technologies/instant-client/winx64-64-downloads.html'
+      : process.platform === 'darwin'
+        ? 'https://www.oracle.com/database/technologies/instant-client/macos-intel-x86-downloads.html'
+        : 'https://www.oracle.com/database/technologies/instant-client/linux-x86-64-downloads.html'
+    await shell.openExternal(url)
+    return { success: true }
   })
 
   ipcMain.handle('oracle:setSetupDone', (_event, mode: 'thin' | 'thick') => {
