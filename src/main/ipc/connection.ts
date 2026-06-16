@@ -2,6 +2,7 @@ import { IpcMain } from 'electron'
 import { Client as PgClient, Pool as PgPool } from 'pg'
 import Store from 'electron-store'
 import * as crypto from 'crypto'
+import { tryInitThickMode } from './oracle-setup'
 
 interface ConnectionConfig {
   id: string
@@ -115,7 +116,8 @@ export function registerConnectionHandlers(ipcMain: IpcMain): void {
 
       if (config.type === 'oracle') {
         try {
-          const oracledb = await import('node-oracledb')
+          await tryInitThickMode()
+          const { default: oracledb } = await import('oracledb')
           let connectString = config.host + ':' + config.port + '/' + config.oracle?.serviceName
           if (config.oracle?.mode === 'tns' && config.oracle.tnsAlias) {
             connectString = config.oracle.tnsAlias
@@ -128,8 +130,9 @@ export function registerConnectionHandlers(ipcMain: IpcMain): void {
           await conn.execute('SELECT 1 FROM DUAL')
           await conn.close()
           return { success: true, message: 'Connection successful' }
-        } catch {
-          return { success: false, message: 'Oracle driver not available. Install node-oracledb and Oracle Instant Client.' }
+        } catch (oraErr: unknown) {
+          const msg = oraErr instanceof Error ? oraErr.message : String(oraErr)
+          return { success: false, message: msg }
         }
       }
 

@@ -1,6 +1,14 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
 const api = {
+  oracle: {
+    getSetupState: () => ipcRenderer.invoke('oracle:getSetupState'),
+    findClient: () => ipcRenderer.invoke('oracle:findClient'),
+    initThick: (libDir?: string) => ipcRenderer.invoke('oracle:initThick', libDir),
+    installClient: () => ipcRenderer.invoke('oracle:installClient'),
+    setSetupDone: (mode: 'thin' | 'thick') => ipcRenderer.invoke('oracle:setSetupDone', mode),
+    resetSetup: () => ipcRenderer.invoke('oracle:resetSetup'),
+  },
   connection: {
     list: () => ipcRenderer.invoke('connection:list'),
     save: (config: unknown) => ipcRenderer.invoke('connection:save', config),

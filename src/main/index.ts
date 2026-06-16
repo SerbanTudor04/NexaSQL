@@ -3,6 +3,7 @@ import { join } from 'path'
 import { registerConnectionHandlers } from './ipc/connection'
 import { registerQueryHandlers } from './ipc/query'
 import { registerSchemaHandlers } from './ipc/schema'
+import { registerOracleSetupHandlers } from './ipc/oracle-setup'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -41,6 +42,7 @@ app.whenReady().then(() => {
   registerConnectionHandlers(ipcMain)
   registerQueryHandlers(ipcMain)
   registerSchemaHandlers(ipcMain)
+  registerOracleSetupHandlers(ipcMain)
 
   createWindow()
 

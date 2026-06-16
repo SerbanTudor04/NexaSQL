@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, toRaw } from 'vue'
 import { useConnectionStore } from '@/stores/connections'
 import type { ConnectionConfig } from '@/types'
 import { generateId } from '@/lib/utils'
@@ -71,7 +71,7 @@ async function handleTest() {
   testing.value = true
   testResult.value = null
   try {
-    const config = { ...form.value, port: Number(form.value.port) }
+    const config = JSON.parse(JSON.stringify({ ...toRaw(form.value), port: Number(form.value.port) }))
     testResult.value = await connectionStore.testConnection(config)
   } catch (err) {
     testResult.value = { success: false, message: String(err) }
@@ -81,7 +81,7 @@ async function handleTest() {
 }
 
 function handleSave() {
-  emit('save', { ...form.value })
+  emit('save', JSON.parse(JSON.stringify(toRaw(form.value))))
 }
 </script>
 
